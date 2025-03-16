@@ -1,0 +1,22 @@
+{
+	"name": "dubheos-bridge-backend",
+	"version": "0.0.1",
+	"description": "Simple starter template",
+	"author": "team@0xobelisk.com",
+	"license": "MIT",
+	"scripts": {
+	},
+	"dependencies": {
+		"@0xobelisk/sui-client": "^1.1.4",
+		"@polkadot/api": "^15.7.2",
+		"@polkadot/keyring": "^13.4.3",
+		"@polkadot/util": "^13.4.3",
+		"@polkadot/util-crypto": "^13.4.3",
+		"dotenv": "^16.4.7"
+	},
+	"devDependencies": {
+		"@types/node": "^22.10.1",
+		"ts-node": "^10.9.1",
+		"typescript": "5.1.6"
+	}
+}
