@@ -9,8 +9,8 @@ const initDubheClient = () => {
     const dubhe = new Dubhe({
       networkType: NETWORK,
       packageId: PACKAGE_ID,
-      indexerUrl: "http://127.0.0.1:3001", // Custom HTTP endpoint
-      indexerWsUrl: "ws://127.0.0.1:3001", // Custom WebSocket endpoint
+      indexerUrl: 'http://43.154.98.251:3001',
+      indexerWsUrl: 'ws://43.154.98.251:3001',
     });
     return dubhe;
   };
@@ -25,7 +25,7 @@ async function handleDubheTransfer(targetAddress: string, amount: number) {
         const alice = keyring.addFromUri('//Alice');
 
         // 连接到 Dubhe 节点
-        const wsProvider = new WsProvider('ws://localhost:9944');
+        const wsProvider = new WsProvider('ws://43.154.98.251:9944');
         const api = await ApiPromise.create({ 
             provider: wsProvider,
             noInitWarn: true 
@@ -111,8 +111,11 @@ const subscribeToEvents = async (dubhe: Dubhe) => {
 };
 
 const bridge_process = async () => {
+    console.log("111111");
     const dubhe = initDubheClient();
-    subscribeToEvents(dubhe);
+    console.log("222222");
+    await subscribeToEvents(dubhe);
+    console.log("333333");
 }
 
 bridge_process();
