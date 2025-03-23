@@ -5,6 +5,7 @@
 	"author": "team@0xobelisk.com",
 	"license": "MIT",
 	"scripts": {
+		"start": "ts-node src/index.ts"
 	},
 	"dependencies": {
 		"@0xobelisk/sui-client": "^1.1.4",
