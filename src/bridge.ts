@@ -5,29 +5,29 @@ import { NETWORK, PACKAGE_ID } from './config';
 import { decodeAddress, encodeAddress } from '@polkadot/keyring';
 import { isHex } from '@polkadot/util';
 
-// 添加 Dubhe转账处理函数
+// Add Dubhe transfer handling function
 async function handleDubheTransfer(targetAddress: string, amount: number) {
 	try {
-		// 创建 Keyring 实例，使用默认的 sr25519
+		// Create Keyring instance using default sr25519
 		const keyring = new Keyring({ type: 'sr25519' });
 
-		// 使用 Alice 测试账户
+		// Use Alice test account
 		const alice = keyring.addFromUri('//Alice');
 
-		// 连接到 Dubhe 节点
+		// Connect to Dubhe node
 		const wsProvider = new WsProvider('ws://43.154.98.251:9944');
 		const api = await ApiPromise.create({
 			provider: wsProvider,
 			noInitWarn: true,
 		});
 
-		// 创建并发送交易
+		// Create and send transaction
 		const transfer = api.tx.balances.transferKeepAlive(
 			targetAddress,
 			amount
 		);
 
-		// 签名并发送交易
+		// Sign and send transaction
 		const hash = await transfer.signAndSend(alice, ({ status, events }) => {
 			if (status.isInBlock) {
 				console.log(
@@ -46,7 +46,7 @@ async function handleDubheTransfer(targetAddress: string, amount: number) {
 					'Transfer finalized in block:',
 					status.asFinalized.toHex()
 				);
-				// 可选：关闭连接
+				// Optional: Close connection
 				api.disconnect();
 			}
 		});
@@ -57,19 +57,19 @@ async function handleDubheTransfer(targetAddress: string, amount: number) {
 	}
 }
 
-// 添加地址校验函数
+// Add address validation function
 function isValidDubheAddress(address: string): boolean {
 	try {
-		// 检查地址格式
+		// Check address format
 		if (isHex(address)) {
-			// 如果是十六进制格式，先转换为 ss58 格式
+			// If hex format, convert to ss58 format
 			address = encodeAddress(address);
 		}
 
-		// 尝试解码地址，如果成功则地址有效
+		// Try to decode address, if successful then address is valid
 		const decoded = decodeAddress(address);
 
-		// 确保地址长度正确（32字节的公钥）
+		// Ensure address length is correct (32 bytes public key)
 		return decoded.length === 32;
 	} catch (error) {
 		console.error('Invalid address format:', error);
@@ -86,7 +86,7 @@ const subscribeToEvents = async (dubhe: Dubhe) => {
 			console.log(`dubhe_chain_address: ${dubhe_chain_address}`);
 			console.log(`dubhe_coin_amount: ${dubhe_coin_amount}`);
 
-			// 验证地址格式
+			// Validate address format
 			if (!isValidDubheAddress(dubhe_chain_address)) {
 				console.error(
 					'Invalid Polkadot address format:',
@@ -95,7 +95,7 @@ const subscribeToEvents = async (dubhe: Dubhe) => {
 				return;
 			}
 
-			// 验证金额
+			// Validate amount
 			if (
 				isNaN(Number(dubhe_coin_amount)) ||
 				Number(dubhe_coin_amount) <= 0
@@ -104,7 +104,7 @@ const subscribeToEvents = async (dubhe: Dubhe) => {
 				return;
 			}
 
-			// 地址和金额验证通过后，调用 Polkadot 转账处理
+			// After address and amount validation, call Polkadot transfer handler
 			await handleDubheTransfer(
 				dubhe_chain_address,
 				Number(dubhe_coin_amount)
