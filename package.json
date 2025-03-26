@@ -8,7 +8,7 @@
 		"start": "ts-node src/index.ts"
 	},
 	"dependencies": {
-		"@0xobelisk/sui-client": "^1.1.4",
+		"@0xobelisk/sui-client": "^1.1.7",
 		"@polkadot/api": "^15.7.2",
 		"@polkadot/keyring": "^13.4.3",
 		"@polkadot/util": "^13.4.3",
