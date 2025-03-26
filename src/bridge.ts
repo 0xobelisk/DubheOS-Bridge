@@ -5,8 +5,8 @@ import { NETWORK, PACKAGE_ID } from './config';
 import { decodeAddress, encodeAddress } from '@polkadot/keyring';
 import { isHex } from '@polkadot/util';
 
-// Add Dubhe transfer handling function
-async function handleDubheTransfer(targetAddress: string, amount: number) {
+// Add Dubhe deposit handling function
+async function handleDubheDeposit(fromChain: string, fromAddress: string, targetAddress: string, amount: number) {
 	try {
 		// Create Keyring instance using default sr25519
 		const keyring = new Keyring({ type: 'sr25519' });
@@ -21,8 +21,24 @@ async function handleDubheTransfer(targetAddress: string, amount: number) {
 			noInitWarn: true,
 		});
 
-		// Create and send transaction
-		const transfer = api.tx.balances.transferKeepAlive(
+		// Convert address to H256 format
+		const addressH256 = isHex(fromAddress) ? fromAddress : "0x" + Buffer.from(fromAddress).toString('hex');
+		
+		// Create chain parameter based on the source chain
+		let chainParam;
+		if (fromChain.toLowerCase() === 'sui') {
+			// Call deposit with Sui chain parameter
+			chainParam = { Sui: addressH256 };
+		} else if (fromChain.toLowerCase() === 'aptos') {
+			// Call deposit with Aptos chain parameter
+			chainParam = { Aptos: addressH256 };
+		} else {
+			throw new Error(`Unsupported chain: ${fromChain}`);
+		}
+
+		// Create and send transaction using the deposit extrinsic
+		const transfer = api.tx.bridgePallet.deposit(
+			chainParam,
 			targetAddress,
 			amount
 		);
@@ -79,18 +95,19 @@ function isValidDubheAddress(address: string): boolean {
 
 const subscribeToEvents = async (dubhe: Dubhe) => {
 	try {
-		await dubhe.subscribe(['asset_moved_event'], async data => {
+		await dubhe.subscribe(['bridge_withdraw'], async data => {
 			console.log('Received real-time data:', data);
-			const dubhe_chain_address = data.value.chain_address;
+			const fromChain = data.value.to_chain;
+			const fromAddress = data.value.from;
 			const dubhe_coin_amount = data.value.amount;
-			console.log(`dubhe_chain_address: ${dubhe_chain_address}`);
-			console.log(`dubhe_coin_amount: ${dubhe_coin_amount}`);
+			const to_address = data.value.to;
+		
 
 			// Validate address format
-			if (!isValidDubheAddress(dubhe_chain_address)) {
+			if (!isValidDubheAddress(to_address)) {
 				console.error(
 					'Invalid Polkadot address format:',
-					dubhe_chain_address
+					to_address
 				);
 				return;
 			}
@@ -105,8 +122,10 @@ const subscribeToEvents = async (dubhe: Dubhe) => {
 			}
 
 			// After address and amount validation, call Polkadot transfer handler
-			await handleDubheTransfer(
-				dubhe_chain_address,
+			await handleDubheDeposit(
+				fromChain,
+				fromAddress,
+				to_address,
 				Number(dubhe_coin_amount)
 			);
 		});
