@@ -2,6 +2,7 @@ import { ApiPromise, HttpProvider } from '@polkadot/api';
 import { Keyring } from '@polkadot/keyring';
 import { KeyringPair$Json } from '@polkadot/keyring/types';
 import { waitReady } from '@polkadot/wasm-crypto';
+import { isHex } from '@polkadot/util';
 
 import fs from 'fs';
 
@@ -94,6 +95,42 @@ export async function batchSend(
 		let transactions = batchRecipients.map(recipient => {
 			return api.tx.balances.transferAllowDeath(
 				recipient.address,
+				recipient.amount
+			);
+		});
+
+		const batch = api.tx.utility.batch(transactions);
+		const hash = await batch.signAndSend(signer, { nonce });
+		return hash.toString();
+	}
+}
+
+export async function batchBridgeDeposit(
+	api: ApiPromise,
+	recipients: { fromAddress: string; toAddress: string; amount: number }[]
+) {
+	const batchSize = 1000;
+
+	let signer = await getSigner();
+
+	for (let i = 0; i < recipients.length; i += batchSize) {
+		const batchRecipients = recipients.slice(i, i + batchSize);
+
+		let nonce = await api.rpc.system.accountNextIndex(signer.address);
+
+		let transactions = batchRecipients.map(recipient => {
+			// Convert address to H256 format
+			const addressH256 = isHex(recipient.fromAddress)
+				? recipient.fromAddress
+				: '0x' + Buffer.from(recipient.fromAddress).toString('hex');
+
+			// Create chain parameter based on the source chain
+			let chainParam = {
+				Sui: addressH256,
+			};
+			return api.tx.bridge.deposit(
+				chainParam,
+				recipient.toAddress,
 				recipient.amount
 			);
 		});

@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events';
 import { DatabaseService } from '../services/database';
-import { batchSend } from './tx';
+import { batchBridgeDeposit, batchSend } from './tx';
 import { ApiPromise, HttpProvider } from '@polkadot/api';
 import dotenv from 'dotenv';
 
@@ -9,7 +9,8 @@ dotenv.config();
 export interface BridgeTask {
 	id: string;
 	sender: string;
-	dubheChainAddress: string;
+	fromAddress: string;
+	toAddress: string;
 	amount: string;
 	timestamp: number;
 	status: 'pending' | 'processing' | 'completed' | 'failed';
@@ -60,10 +61,11 @@ export class BridgeQueue {
 
 	public async addTask(
 		sender: string,
-		dubheChainAddress: string,
+		fromAddress: string,
+		toAddress: string,
 		amount: string
 	): Promise<string> {
-		const id = `${sender}-${dubheChainAddress}-${amount}`;
+		const id = `${sender}-${fromAddress}-${toAddress}-${amount}`;
 
 		const existingTask = await this.db.getTask(id);
 		if (existingTask) {
@@ -73,7 +75,8 @@ export class BridgeQueue {
 			await this.db.updateTask({
 				id,
 				sender,
-				dubheChainAddress,
+				fromAddress,
+				toAddress,
 				amount,
 				timestamp: Date.now(),
 				status: 'pending',
@@ -84,7 +87,8 @@ export class BridgeQueue {
 		const task: BridgeTask = {
 			id,
 			sender,
-			dubheChainAddress,
+			fromAddress,
+			toAddress,
 			amount,
 			timestamp: Date.now(),
 			status: 'pending',
@@ -174,11 +178,16 @@ export class BridgeQueue {
 			await this.initializeApi();
 		}
 
-		const batchRecipients: { address: string; amount: number }[] = [];
+		const batchRecipients: {
+			fromAddress: string;
+			toAddress: string;
+			amount: number;
+		}[] = [];
 
 		for (let i = 0; i < tasks.length; i += 1) {
 			batchRecipients.push({
-				address: tasks[i].dubheChainAddress,
+				fromAddress: tasks[i].fromAddress,
+				toAddress: tasks[i].toAddress,
 				amount: Number(tasks[i].amount),
 			});
 		}
@@ -186,7 +195,11 @@ export class BridgeQueue {
 		console.log('Batch recipients', batchRecipients);
 
 		try {
-			const batchHash = await batchSend(this.api, batchRecipients);
+			// const batchHash = await batchSend(this.api, batchRecipients);
+			const batchHash = await batchBridgeDeposit(
+				this.api,
+				batchRecipients
+			);
 			console.log('Batch hash', batchHash);
 			return { transactionHash: batchHash };
 		} catch (err) {

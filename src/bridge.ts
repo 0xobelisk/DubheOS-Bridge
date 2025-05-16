@@ -42,16 +42,18 @@ const subscribeToEvents = async (dubhe: Dubhe, bridgeQueue: BridgeQueue) => {
 			handleData: async (data: IndexerEvent) => {
 				console.log('Received real-time data:', data);
 				const { sender, value } = data;
-				const userDubheAddress = value.to;
+				const fromAddress = value.from;
+				const toAddress = value.to;
 				const bridgeCoinAmount = value.amount;
-				console.log(`userDubheAddress: ${userDubheAddress}`);
+				console.log(`fromAddress: ${fromAddress}`);
+				console.log(`toAddress: ${toAddress}`);
 				console.log(`bridgeCoinAmount: ${bridgeCoinAmount}`);
 
 				// Validate address format
-				if (!isValidDubheAddress(userDubheAddress)) {
+				if (!isValidDubheAddress(fromAddress)) {
 					console.error(
 						'Invalid Dubhe Chain address format:',
-						userDubheAddress
+						fromAddress
 					);
 					return;
 				}
@@ -68,7 +70,8 @@ const subscribeToEvents = async (dubhe: Dubhe, bridgeQueue: BridgeQueue) => {
 				// After address and amount validation, call Polkadot transfer handler
 				await bridgeQueue.addTask(
 					sender,
-					userDubheAddress,
+					fromAddress,
+					toAddress,
 					bridgeCoinAmount
 				);
 			},
