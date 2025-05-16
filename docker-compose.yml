@@ -29,8 +29,8 @@ services:
       - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/postgres
       - DUBHEOS_INDEXER_URL=http://host.docker.internal:3001
       - DUBHEOS_INDEXER_WS_URL=ws://host.docker.internal:3001
-      - DUBHEOS_HTTP_RPC=http://43.154.98.251:9944
-      - DUBHEOS_BRIDGE_MANAGER_PASSWORD=1234qwer
+      - DUBHEOS_HTTP_RPC=http://host.docker.internal:9944
+      - DUBHEOS_BRIDGE_MANAGER_PASSWORD=
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
