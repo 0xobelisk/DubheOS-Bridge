@@ -4,6 +4,12 @@ import { decodeAddress, encodeAddress } from '@polkadot/keyring';
 import { isHex } from '@polkadot/util';
 import { BridgeQueue } from './queue/BridgeQueue';
 
+const RECONNECT_CONFIG = {
+	maxRetries: 5,
+	retryInterval: 5000, // 5 seconds
+	currentRetries: 0,
+};
+
 // Add address validation function
 function isValidDubheAddress(address: string): boolean {
 	try {
@@ -26,14 +32,14 @@ function isValidDubheAddress(address: string): boolean {
 
 const subscribeToEvents = async (dubhe: Dubhe, bridgeQueue: BridgeQueue) => {
 	try {
-		await dubhe.subscribe(
-			[
+		await dubhe.subscribe({
+			types: [
 				{
 					kind: SubscriptionKind.Event,
 					name: 'asset_moved',
 				},
 			],
-			async (data: IndexerEvent) => {
+			handleData: async (data: IndexerEvent) => {
 				console.log('Received real-time data:', data);
 				const { sender, checkpoint, value } = data;
 				const userDubheAddress = value.chain_address;
@@ -67,12 +73,45 @@ const subscribeToEvents = async (dubhe: Dubhe, bridgeQueue: BridgeQueue) => {
 					bridgeCoinAmount,
 					checkpoint
 				);
-			}
-		);
+			},
+
+			onOpen: () => {
+				RECONNECT_CONFIG.currentRetries = 0;
+				console.log('Connected to DubheOS Indexer');
+			},
+			onClose: async () => {
+				await handleReconnect(dubhe, bridgeQueue);
+			},
+		});
 	} catch (error) {
 		console.error('Failed to subscribe to events:', error);
+		console.log('Retrying in 5 seconds...');
+
+		await new Promise(resolve =>
+			setTimeout(resolve, RECONNECT_CONFIG.retryInterval)
+		);
+		await subscribeToEvents(dubhe, bridgeQueue);
 	}
 };
+
+async function handleReconnect(dubhe: Dubhe, bridgeQueue: BridgeQueue) {
+	if (RECONNECT_CONFIG.currentRetries >= RECONNECT_CONFIG.maxRetries) {
+		console.error(
+			`Failed to reconnect after ${RECONNECT_CONFIG.maxRetries} attempts. Exiting service...`
+		);
+		process.exit(1);
+	}
+
+	RECONNECT_CONFIG.currentRetries++;
+	console.log(
+		`Attempting to reconnect (${RECONNECT_CONFIG.currentRetries}/${RECONNECT_CONFIG.maxRetries})...`
+	);
+
+	await new Promise(resolve =>
+		setTimeout(resolve, RECONNECT_CONFIG.retryInterval)
+	);
+	await subscribeToEvents(dubhe, bridgeQueue);
+}
 
 export async function startBridgeProcess() {
 	console.log('====================================');
@@ -88,9 +127,9 @@ export async function startBridgeProcess() {
 
 	const dubhe = new Dubhe({
 		networkType: NETWORK,
-		indexerUrl: 'http://43.154.98.251:3001',
-		indexerWsUrl: 'ws://43.154.98.251:3001',
+		indexerUrl: process.env.DUBHEOS_INDEXER_URL,
+		indexerWsUrl: process.env.DUBHEOS_INDEXER_WS_URL,
 	});
 
-	subscribeToEvents(dubhe, bridgeQueue);
+	await subscribeToEvents(dubhe, bridgeQueue);
 }
