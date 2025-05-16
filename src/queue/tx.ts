@@ -27,7 +27,7 @@ export function listFilesInDirectory(directoryPath: string) {
 
 export async function getSigner() {
 	try {
-		const files = listFilesInDirectory('./src/keyfile');
+		const files = listFilesInDirectory('./src/keys');
 		const keyStr = fs.readFileSync(files[0].path, 'utf8');
 		// const keyStr = fs.readFileSync('./keys/bridge-manager.json', 'utf8');
 		const keyring = new Keyring({ type: 'sr25519' });

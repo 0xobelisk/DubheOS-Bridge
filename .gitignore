@@ -47,6 +47,6 @@ contracts/dubhe-framework/Move.lock
 keys
 *.json
 
-src/queue/keys
+src/keys
 
 .data/
