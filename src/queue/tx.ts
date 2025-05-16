@@ -11,9 +11,25 @@ dotenv.config();
 export const delay = (ms: number) =>
 	new Promise(resolve => setTimeout(resolve, ms));
 
+export function listFilesInDirectory(directoryPath: string) {
+	try {
+		let files = fs.readdirSync(directoryPath);
+		const data = files.map(file => {
+			return {
+				path: `${directoryPath}/${file}`,
+			};
+		});
+		return data;
+	} catch (err) {
+		console.error('Error listing files in directory:', err);
+	}
+}
+
 export async function getSigner() {
 	try {
-		const keyStr = fs.readFileSync('./keys/bridge-manager.json', 'utf8');
+		const files = listFilesInDirectory('./src/keyfile');
+		const keyStr = fs.readFileSync(files[0].path, 'utf8');
+		// const keyStr = fs.readFileSync('./keys/bridge-manager.json', 'utf8');
 		const keyring = new Keyring({ type: 'sr25519' });
 		const Key = JSON.parse(keyStr) as KeyringPair$Json;
 		const system = keyring.createFromJson(Key);
