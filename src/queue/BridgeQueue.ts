@@ -89,7 +89,7 @@ export class BridgeQueue {
 			timestamp: Date.now(),
 			status: 'pending',
 		};
-		console.log('add new task', task);
+		console.log('Add new task', task);
 		await this.db.addTask(task);
 		return id;
 	}
@@ -183,7 +183,7 @@ export class BridgeQueue {
 			});
 		}
 
-		console.log('batchRecipients', batchRecipients);
+		console.log('Batch recipients', batchRecipients);
 
 		try {
 			const batchHash = await batchSend(this.api, batchRecipients);

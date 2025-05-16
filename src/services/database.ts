@@ -19,7 +19,6 @@ export class DatabaseService {
 	}
 
 	async addTask(task: BridgeTask): Promise<void> {
-		console.log(task);
 		const query = `
       INSERT INTO bridge_tasks (id, sender, dubhe_chain_address, amount, timestamp, status)
       VALUES ($1, $2, $3, $4, $5, $6)
