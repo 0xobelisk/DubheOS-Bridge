@@ -43,17 +43,21 @@ export async function getSigner() {
 }
 
 // Add Dubhe transfer handling function
-export async function transferDubhe(targetAddress: string, amount: number) {
+export async function transferDubhe(
+	api: ApiPromise,
+	targetAddress: string,
+	amount: number
+) {
 	try {
 		const bridgeManager = await getSigner();
 
 		// Connect to Dubhe node
 		// const wsProvider = new WsProvider('ws://43.154.98.251:9944');
-		const httpProvider = new HttpProvider(process.env.DUBHEOS_HTTP_RPC);
-		const api = await ApiPromise.create({
-			provider: httpProvider,
-			noInitWarn: true,
-		});
+		// const httpProvider = new HttpProvider(process.env.DUBHEOS_HTTP_RPC);
+		// const api = await ApiPromise.create({
+		// 	provider: httpProvider,
+		// 	noInitWarn: true,
+		// });
 
 		const nonce = await api.rpc.system.accountNextIndex(
 			bridgeManager.address
@@ -83,13 +87,10 @@ export async function batchSend(
 
 	let signer = await getSigner();
 
-	console.log('------- start batch send -------');
-	console.log('signer', signer.address);
 	for (let i = 0; i < recipients.length; i += batchSize) {
 		const batchRecipients = recipients.slice(i, i + batchSize);
 
 		let nonce = await api.rpc.system.accountNextIndex(signer.address);
-		console.log('Nonce', nonce);
 		let transactions = batchRecipients.map(recipient => {
 			return api.tx.balances.transferAllowDeath(
 				recipient.address,
@@ -97,11 +98,8 @@ export async function batchSend(
 			);
 		});
 
-		console.log('transactions', transactions);
 		const batch = api.tx.utility.batch(transactions);
-		console.log('batch', batch);
 		const hash = await batch.signAndSend(signer, { nonce });
-		console.log('hash', hash.toString());
 		return hash.toString();
 	}
 }

@@ -187,6 +187,7 @@ export class BridgeQueue {
 
 		try {
 			const batchHash = await batchSend(this.api, batchRecipients);
+			console.log('Batch hash', batchHash);
 			return { transactionHash: batchHash };
 		} catch (err) {
 			return { error: String(err) };
