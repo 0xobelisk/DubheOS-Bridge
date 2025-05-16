@@ -41,12 +41,11 @@ const subscribeToEvents = async (dubhe: Dubhe, bridgeQueue: BridgeQueue) => {
 			],
 			handleData: async (data: IndexerEvent) => {
 				console.log('Received real-time data:', data);
-				const { sender, checkpoint, value } = data;
-				const userDubheAddress = value.chain_address;
+				const { sender, value } = data;
+				const userDubheAddress = value.to;
 				const bridgeCoinAmount = value.amount;
 				console.log(`userDubheAddress: ${userDubheAddress}`);
 				console.log(`bridgeCoinAmount: ${bridgeCoinAmount}`);
-				console.log(`checkpoint: ${checkpoint}`);
 
 				// Validate address format
 				if (!isValidDubheAddress(userDubheAddress)) {
@@ -70,8 +69,7 @@ const subscribeToEvents = async (dubhe: Dubhe, bridgeQueue: BridgeQueue) => {
 				await bridgeQueue.addTask(
 					sender,
 					userDubheAddress,
-					bridgeCoinAmount,
-					checkpoint
+					bridgeCoinAmount
 				);
 			},
 

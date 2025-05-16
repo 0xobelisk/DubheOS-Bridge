@@ -21,15 +21,14 @@ export class DatabaseService {
 	async addTask(task: BridgeTask): Promise<void> {
 		console.log(task);
 		const query = `
-      INSERT INTO bridge_tasks (id, sender, dubhe_chain_address, amount, checkpoint, timestamp, status)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      INSERT INTO bridge_tasks (id, sender, dubhe_chain_address, amount, timestamp, status)
+      VALUES ($1, $2, $3, $4, $5, $6)
     `;
 		await this.pool.query(query, [
 			task.id,
 			task.sender,
 			task.dubheChainAddress,
 			task.amount,
-			task.checkpoint,
 			task.timestamp,
 			task.status,
 		]);
@@ -86,9 +85,8 @@ export class DatabaseService {
 			SET sender = $2,
 				dubhe_chain_address = $3,
 				amount = $4,
-				checkpoint = $5,
-				timestamp = $6,
-				status = $7,
+				timestamp = $5,
+				status = $6,
 				result = null,
 				error = null
 			WHERE id = $1
@@ -98,7 +96,6 @@ export class DatabaseService {
 			task.sender,
 			task.dubheChainAddress,
 			task.amount,
-			task.checkpoint,
 			task.timestamp,
 			task.status,
 		]);
@@ -110,7 +107,6 @@ export class DatabaseService {
 			sender: row.sender,
 			dubheChainAddress: row.dubhe_chain_address,
 			amount: row.amount,
-			checkpoint: row.checkpoint,
 			timestamp: row.timestamp,
 			status: row.status,
 			result: row.result,

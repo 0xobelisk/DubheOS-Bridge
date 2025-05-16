@@ -11,7 +11,6 @@ export interface BridgeTask {
 	sender: string;
 	dubheChainAddress: string;
 	amount: string;
-	checkpoint: string;
 	timestamp: number;
 	status: 'pending' | 'processing' | 'completed' | 'failed';
 	result?: any;
@@ -62,10 +61,9 @@ export class BridgeQueue {
 	public async addTask(
 		sender: string,
 		dubheChainAddress: string,
-		amount: string,
-		checkpoint: string
+		amount: string
 	): Promise<string> {
-		const id = `${sender}-${checkpoint}-${dubheChainAddress}-${amount}`;
+		const id = `${sender}-${dubheChainAddress}-${amount}`;
 
 		const existingTask = await this.db.getTask(id);
 		if (existingTask) {
@@ -77,7 +75,6 @@ export class BridgeQueue {
 				sender,
 				dubheChainAddress,
 				amount,
-				checkpoint,
 				timestamp: Date.now(),
 				status: 'pending',
 			});
@@ -89,7 +86,6 @@ export class BridgeQueue {
 			sender,
 			dubheChainAddress,
 			amount,
-			checkpoint,
 			timestamp: Date.now(),
 			status: 'pending',
 		};
