@@ -1,61 +1,8 @@
-import { ApiPromise, WsProvider } from '@polkadot/api';
-import { Keyring } from '@polkadot/keyring';
-import { Dubhe } from '@0xobelisk/sui-client';
+import { Dubhe, IndexerEvent, SubscriptionKind } from '@0xobelisk/sui-client';
 import { NETWORK, PACKAGE_ID } from './config';
 import { decodeAddress, encodeAddress } from '@polkadot/keyring';
 import { isHex } from '@polkadot/util';
-
-// Add Dubhe transfer handling function
-async function handleDubheTransfer(targetAddress: string, amount: number) {
-	try {
-		// Create Keyring instance using default sr25519
-		const keyring = new Keyring({ type: 'sr25519' });
-
-		// Use Alice test account
-		const alice = keyring.addFromUri('//Alice');
-
-		// Connect to Dubhe node
-		const wsProvider = new WsProvider('ws://43.154.98.251:9944');
-		const api = await ApiPromise.create({
-			provider: wsProvider,
-			noInitWarn: true,
-		});
-
-		// Create and send transaction
-		const transfer = api.tx.balances.transferKeepAlive(
-			targetAddress,
-			amount
-		);
-
-		// Sign and send transaction
-		const hash = await transfer.signAndSend(alice, ({ status, events }) => {
-			if (status.isInBlock) {
-				console.log(
-					'Transfer included in block:',
-					status.asInBlock.toHex()
-				);
-
-				events.forEach(({ event }) => {
-					if (event.section === 'balances') {
-						console.log('Transfer event:', event.method);
-						console.log('Event data:', event.data.toString());
-					}
-				});
-			} else if (status.isFinalized) {
-				console.log(
-					'Transfer finalized in block:',
-					status.asFinalized.toHex()
-				);
-				// Optional: Close connection
-				api.disconnect();
-			}
-		});
-
-		console.log('Transfer initiated with hash:', hash.toString());
-	} catch (error) {
-		console.error('Failed to process Polkadot transfer:', error);
-	}
-}
+import { BridgeQueue } from './queue/BridgeQueue';
 
 // Add address validation function
 function isValidDubheAddress(address: string): boolean {
@@ -77,39 +24,51 @@ function isValidDubheAddress(address: string): boolean {
 	}
 }
 
-const subscribeToEvents = async (dubhe: Dubhe) => {
+const subscribeToEvents = async (dubhe: Dubhe, bridgeQueue: BridgeQueue) => {
 	try {
-		await dubhe.subscribe(['asset_moved_event'], async data => {
-			console.log('Received real-time data:', data);
-			const dubhe_chain_address = data.value.chain_address;
-			const dubhe_coin_amount = data.value.amount;
-			console.log(`dubhe_chain_address: ${dubhe_chain_address}`);
-			console.log(`dubhe_coin_amount: ${dubhe_coin_amount}`);
+		await dubhe.subscribe(
+			[
+				{
+					kind: SubscriptionKind.Event,
+					name: 'asset_moved',
+				},
+			],
+			async (data: IndexerEvent) => {
+				console.log('Received real-time data:', data);
+				const { sender, checkpoint, value } = data;
+				const userDubheAddress = value.chain_address;
+				const bridgeCoinAmount = value.amount;
+				console.log(`userDubheAddress: ${userDubheAddress}`);
+				console.log(`bridgeCoinAmount: ${bridgeCoinAmount}`);
+				console.log(`checkpoint: ${checkpoint}`);
 
-			// Validate address format
-			if (!isValidDubheAddress(dubhe_chain_address)) {
-				console.error(
-					'Invalid Polkadot address format:',
-					dubhe_chain_address
+				// Validate address format
+				if (!isValidDubheAddress(userDubheAddress)) {
+					console.error(
+						'Invalid Dubhe Chain address format:',
+						userDubheAddress
+					);
+					return;
+				}
+
+				// Validate amount
+				if (
+					isNaN(Number(bridgeCoinAmount)) ||
+					Number(bridgeCoinAmount) <= 0
+				) {
+					console.error('Invalid amount:', bridgeCoinAmount);
+					return;
+				}
+
+				// After address and amount validation, call Polkadot transfer handler
+				await bridgeQueue.addTask(
+					sender,
+					userDubheAddress,
+					bridgeCoinAmount,
+					checkpoint
 				);
-				return;
 			}
-
-			// Validate amount
-			if (
-				isNaN(Number(dubhe_coin_amount)) ||
-				Number(dubhe_coin_amount) <= 0
-			) {
-				console.error('Invalid amount:', dubhe_coin_amount);
-				return;
-			}
-
-			// After address and amount validation, call Polkadot transfer handler
-			await handleDubheTransfer(
-				dubhe_chain_address,
-				Number(dubhe_coin_amount)
-			);
-		});
+		);
 	} catch (error) {
 		console.error('Failed to subscribe to events:', error);
 	}
@@ -124,11 +83,14 @@ export async function bridge_process() {
 	console.log(`Starting bridge service at ${new Date().toISOString()}`);
 	console.log('====================================');
 
+	const bridgeQueue = new BridgeQueue();
+	await bridgeQueue.initializeApi();
+
 	const dubhe = new Dubhe({
 		networkType: NETWORK,
-		packageId: PACKAGE_ID,
 		indexerUrl: 'http://43.154.98.251:3001',
 		indexerWsUrl: 'ws://43.154.98.251:3001',
 	});
-	await subscribeToEvents(dubhe);
+
+	subscribeToEvents(dubhe, bridgeQueue);
 }
