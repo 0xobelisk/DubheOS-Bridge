@@ -13,8 +13,9 @@
 		"@polkadot/keyring": "^13.4.3",
 		"@polkadot/util": "^13.4.3",
 		"@polkadot/util-crypto": "^13.4.3",
-		"pg": "^8.11.3",
-		"dotenv": "^16.4.7"
+		"@polkadot/wasm-crypto": "^7.4.1",
+		"dotenv": "^16.4.7",
+		"pg": "^8.11.3"
 	},
 	"devDependencies": {
 		"@types/node": "^22.10.1",

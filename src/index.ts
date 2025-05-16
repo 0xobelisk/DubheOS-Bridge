@@ -1,7 +1,7 @@
-import { bridge_process } from './bridge';
+import { startBridgeProcess } from './bridge';
 
 const main = async () => {
-	await bridge_process();
+	await startBridgeProcess();
 };
 
 main();

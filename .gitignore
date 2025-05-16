@@ -43,3 +43,10 @@ contracts/dubhe-framework/.history
 contracts/dubhe-framework/Move.lock
 
 *.db
+
+keys
+*.json
+
+src/queue/keys
+
+.data/

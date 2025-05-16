@@ -13,6 +13,8 @@ services:
       - .data/postgres:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     restart: always
+    networks:
+      - bridge-network
 
   dubheos-bridge-backend:
     build:
@@ -24,5 +26,12 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=postgres
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/postgres
     depends_on:
       - postgres
+    networks:
+      - bridge-network
+
+networks:
+  bridge-network:
+    driver: bridge

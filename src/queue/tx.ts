@@ -1,19 +1,37 @@
 import { ApiPromise, WsProvider } from '@polkadot/api';
 import { Keyring } from '@polkadot/keyring';
 import { KeyringPair$Json } from '@polkadot/keyring/types';
+import { waitReady } from '@polkadot/wasm-crypto';
+
 import fs from 'fs';
+
+import * as dotenv from 'dotenv';
+dotenv.config();
 
 export const delay = (ms: number) =>
 	new Promise(resolve => setTimeout(resolve, ms));
 
-export function getSigner() {
-	const keyring = new Keyring({ type: 'sr25519' });
-	const bridgeManager = keyring.addFromJson(
-		JSON.parse(
-			fs.readFileSync('./keys/bridge-manager.json', 'utf8')
-		) as KeyringPair$Json
-	);
-	return bridgeManager;
+export async function getSigner() {
+	// const keyring = new Keyring({ type: 'sr25519' });
+	// const bridgeManager = keyring.addFromJson(
+	// 	JSON.parse(
+	// 		fs.readFileSync('./keys/bridge-manager.json', 'utf8')
+	// 	) as KeyringPair$Json
+	// );
+	// return bridgeManager;
+
+	try {
+		const keyStr = fs.readFileSync('./keys/bridge-manager.json', 'utf8');
+		const keyring = new Keyring({ type: 'sr25519' });
+		const Key = JSON.parse(keyStr) as KeyringPair$Json;
+		const system = keyring.createFromJson(Key);
+		system.unlock(process.env.DUBHEOS_BRIDGE_MANAGER_PASSWORD);
+
+		return system;
+	} catch (err) {
+		console.error('Error reading JSON file:', err);
+		process.exit();
+	}
 }
 
 // Add Dubhe transfer handling function

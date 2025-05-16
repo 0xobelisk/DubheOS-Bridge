@@ -2,6 +2,9 @@ import { EventEmitter } from 'events';
 import { DatabaseService } from '../services/database';
 import { batchSend } from './tx';
 import { ApiPromise, WsProvider } from '@polkadot/api';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 export interface BridgeTask {
 	id: string;
@@ -38,6 +41,7 @@ export class BridgeQueue {
 
 		// Connect to Dubhe node
 		// const wsProvider = new WsProvider('ws://43.154.98.251:9944');
+
 		this.wsProvider = new WsProvider(process.env.DUBHEOS_WS_URL);
 	}
 
@@ -61,7 +65,7 @@ export class BridgeQueue {
 		amount: string,
 		checkpoint: string
 	): Promise<string> {
-		const id = `${sender}-${checkpoint}-${dubheChainAddress}`;
+		const id = `${sender}-${checkpoint}-${dubheChainAddress}-${amount}`;
 
 		const existingTask = await this.db.getTask(id);
 		if (existingTask) {

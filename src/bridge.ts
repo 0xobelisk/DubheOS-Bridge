@@ -74,7 +74,7 @@ const subscribeToEvents = async (dubhe: Dubhe, bridgeQueue: BridgeQueue) => {
 	}
 };
 
-export async function bridge_process() {
+export async function startBridgeProcess() {
 	console.log('====================================');
 	console.log('DubheOS Bridge Service');
 	console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
