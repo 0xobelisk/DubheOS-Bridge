@@ -36,7 +36,7 @@ const subscribeToEvents = async (dubhe: Dubhe, bridgeQueue: BridgeQueue) => {
 			types: [
 				{
 					kind: SubscriptionKind.Event,
-					name: 'asset_moved',
+					name: 'bridge_withdraw',
 				},
 			],
 			handleData: async (data: IndexerEvent) => {
