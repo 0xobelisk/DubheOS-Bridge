@@ -60,16 +60,18 @@ export class BridgeQueue {
 	}
 
 	public async addTask(
+		eventId: string,
 		sender: string,
 		fromAddress: string,
 		toAddress: string,
 		amount: string
 	): Promise<string> {
-		const id = `${sender}-${fromAddress}-${toAddress}-${amount}`;
+		const id = `${eventId}`;
 
 		const existingTask = await this.db.getTask(id);
 		if (existingTask) {
 			if (existingTask.status !== 'failed') {
+				console.log('Task already exists', id);
 				return id;
 			}
 			await this.db.updateTask({
@@ -93,7 +95,7 @@ export class BridgeQueue {
 			timestamp: Date.now(),
 			status: 'pending',
 		};
-		console.log('Add new task', task);
+		console.log('Add new task', id);
 		await this.db.addTask(task);
 		return id;
 	}
