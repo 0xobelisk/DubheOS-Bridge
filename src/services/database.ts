@@ -66,6 +66,16 @@ export class DatabaseService {
 		return rows.map(this.mapToBridgeTask);
 	}
 
+	async getPendingAndFailedTasks(): Promise<BridgeTask[]> {
+		const query = `
+      SELECT * FROM bridge_tasks
+      WHERE status IN ('pending', 'failed')
+      ORDER BY timestamp ASC
+    `;
+		const { rows } = await this.pool.query(query);
+		return rows.map(this.mapToBridgeTask);
+	}
+
 	async getAllTasks(
 		limit: number = 100,
 		offset: number = 0

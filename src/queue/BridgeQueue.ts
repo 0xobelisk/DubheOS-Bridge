@@ -114,10 +114,17 @@ export class BridgeQueue {
 
 			try {
 				this.processing = true;
-				const pendingTasks = await this.db.getPendingTasks();
+				const pendingTasks = await this.db.getPendingAndFailedTasks();
 
 				if (pendingTasks.length > 0) {
+					console.log(
+						`Processing ${pendingTasks.length} tasks (including pending and failed tasks)`
+					);
+
 					for (const task of pendingTasks) {
+						if (task.status === 'failed') {
+							console.log(`Retrying failed task: ${task.id}`);
+						}
 						await this.db.updateTaskStatus(task.id, 'processing');
 						this.eventEmitter.emit('taskStatusChanged', task);
 					}
